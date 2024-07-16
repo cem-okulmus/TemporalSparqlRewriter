@@ -1,14 +1,13 @@
 import org.apache.jena.graph.Node;
-import org.apache.jena.graph.Triple;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.sparql.algebra.Algebra;
 import org.apache.jena.sparql.algebra.Op;
-import org.apache.jena.sparql.core.TriplePath;
-import org.apache.jena.sparql.syntax.*;
+import org.apache.jena.sparql.algebra.OpVisitorBase;
+import org.apache.jena.sparql.algebra.OpWalker;
+import org.apache.jena.sparql.algebra.op.OpBGP;
+import org.apache.jena.sparql.syntax.ElementWalker;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -24,8 +23,15 @@ public class TemporalSparqlTransformer {
                     "http://www.w3.org/2006/time#hasEnd");
 
 
-    private static Boolean correctTemporalQueryCheck(Op query) {
+    /**
+     *
+     * @param query A Sparql-Star query that uses quoted triples to add time intervals to facts.
+     * @return  True if the query fits the required structure, False otherwise.
+     */
+    private static Boolean correctTemporalStarStatements(Query query) {
         TemporalSparqlVisitor visitor = new TemporalSparqlVisitor();
+
+        ElementWalker.walk(query.getQueryPattern(),visitor);
 
         for (Node predicate : visitor.metaPredicates ) {
             if (!list.contains(predicate.toString())){
@@ -42,6 +48,27 @@ public class TemporalSparqlTransformer {
     }
 
 
+    /**
+     * @param query A Sparql-Star query that uses quoted triples to add time  intervals to facts
+     * @return Returns True if the query only uses single-time variable (STV) blocks, False otherwise
+     */
+    private static Boolean correctSTVShape(Query query) {
+        TemporalSparqlOPVisitor visitor = new TemporalSparqlOPVisitor();
+        Op op = Algebra.compile(query);
+        OpWalker.walk(op,visitor);
+
+        return visitor.STVBrokenlocal;
+    }
+
+
+
+    /**
+     * @param queryString A string describing a Sparql-Star query
+     * @return A string-representation of a Sparql query without quoted triples, and an encoding of temporal relations
+     *  that can be evaluated on a regular Sparql endpoint while maintaining the desired temporal semantics (such as
+     *  expressing Allen's relations between time intervals).
+     * @throws Exception  Exceptions to be thrown if the input query  does not purport to the desired shape
+     */
     public static String transform(String queryString) throws Exception{
 
         Query query = QueryFactory.create(queryString);
@@ -49,14 +76,28 @@ public class TemporalSparqlTransformer {
 
         System.out.println("Algebra Op " + op);
 
+
+//        TODO: replace these ad-hoc generic exceptions with a limited set of specialised ones later.
+
         // --------------------------------
         // Check that query is in correct shape
         // --------------------------------
-        if (!correctTemporalQueryCheck(op) ){
-            throw new Exception("Unacceptable Star-Sparql query");
+        if (!correctTemporalStarStatements(query) ){
+            throw new Exception("Unacceptable Star-Sparql query. Full Sparql-Star format not supported!");
         }
 
+        // --------------------------------
+        // Check that query only features STV BGP blocks, at any level
+        // --------------------------------
+        if (!correctSTVShape(query) ){
+            throw new Exception("Unclear temporal semantics, require single-time variable blocks only!");
+        }
 
+        // --------------------------------
+        // Build a new flat query that replaces any quoted triple, and replaces FILTER statements with interval comparisons
+        // --------------------------------
+
+//        TODO: write the query transformer
 
 
 

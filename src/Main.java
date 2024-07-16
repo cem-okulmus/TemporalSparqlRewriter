@@ -14,7 +14,7 @@ import java.util.*;
 public class Main {
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         String queryString =  "PREFIX : <http://www.semanticweb.org/user/ontologies/2016/8/untitled-ontology-84#>\n" +
                 "PREFIX time: <http://www.w3.org/2006/time#>\n" +
@@ -38,8 +38,9 @@ public class Main {
         try{
             String outQuery = TemporalSparqlTransformer.transform(queryString);
         } catch (Exception e ){
-            System.out.println("Exception: " + e);
-            System.exit(1);
+            throw e;
+//            System.out.println("Exception: " + e);
+//            System.exit(1);
         }
 
 
