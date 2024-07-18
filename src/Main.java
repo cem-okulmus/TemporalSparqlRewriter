@@ -1,15 +1,4 @@
 //import org.apache.jena.arq.
-import org.apache.jena.graph.Node;
-import org.apache.jena.graph.Triple;
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.sparql.algebra.Algebra;
-import org.apache.jena.sparql.algebra.Op;
-import org.apache.jena.sparql.core.TriplePath;
-import org.apache.jena.sparql.expr.Expr;
-import org.apache.jena.sparql.syntax.*;
-
-import java.util.*;
 
 public class Main {
 
@@ -21,27 +10,29 @@ public class Main {
                 "SELECT distinct ?x \n" +
                 "WHERE {\n" +
                 "<< ?x :dept ?z  >> time:hasTime ?y .\n" +
-                "<< ?z :location 'barcelona' >> time:hasTime  ?v; time:hasTime ?v2 .\n" +
+                "<< ?z :location 'barcelona' >> time:hasTime  ?y; time:hasTime ?y .\n" +
                 "?r :location 'barcelona' .\n" +
-                "EXISTS {\n" +
+                "FILTER (EXISTS {\n" +
                 " << ?x :dept ?z >> time:hasTime ?y2 .\n" +
                 " FILTER(time:intervalBefore(?y2,?y)).\n" +
-                "EXISTS {\n"+
+                "FILTER EXISTS {\n"+
                 " << ?x :dept ?z >> time:hasTime ?y2 .\n" +
-                " FILTER(time:intervalBefore(?y2,?y)).\n" +
+                " FILTER(time:intervalIn(?y2,?y)).\n" +
                 "}\n"+
-                "}\n"+
+                "} && ?x > 2)\n"+
                 "}";
 
 
 
         try{
             String outQuery = TemporalSparqlTransformer.transform(queryString);
+            System.out.println("Produced Query is \n \n" + outQuery );
         } catch (Exception e ){
             throw e;
 //            System.out.println("Exception: " + e);
 //            System.exit(1);
         }
+
 
 
 

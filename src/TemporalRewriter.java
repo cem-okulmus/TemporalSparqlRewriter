@@ -1,0 +1,266 @@
+import org.apache.jena.graph.*;
+import org.apache.jena.sparql.algebra.Op;
+import org.apache.jena.sparql.algebra.TransformCopy;
+import org.apache.jena.sparql.algebra.op.OpBGP;
+import org.apache.jena.sparql.algebra.op.OpFilter;
+import org.apache.jena.sparql.algebra.op.OpGraph;
+import org.apache.jena.sparql.algebra.op.OpJoin;
+import org.apache.jena.sparql.core.BasicPattern;
+import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.expr.*;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class TemporalRewriter extends TransformCopy {
+
+    public Op rewritenQuery = null;
+
+
+    private List<Triple> expandStanza(Triple t) {
+
+        List<Triple> triples = new ArrayList<>();
+
+        Node intVar = Var.alloc(new Node_Variable(t.getObject().getName() + "Interval"));
+        Node intVarStart = Var.alloc(new Node_Variable(intVar.getName() + "Start"));
+        Node intVarEnd = Var.alloc(new Node_Variable(intVar.getName() + "End"));
+        Node intVarStartVar = Var.alloc(new Node_Variable(intVarStart.getName() + "Var"));
+        Node intVarEndVar = Var.alloc(new Node_Variable(intVarEnd.getName() + "Var"));
+
+        triples.add(new Triple(t.getObject(),
+                NodeFactory.createLiteral("http://www.w3.org/2006/time#hasTime"),
+                intVar));
+        triples.add(new Triple(intVar,
+                NodeFactory.createLiteral("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+                NodeFactory.createLiteral("http://www.w3.org/2006/time#Interval")));
+        triples.add(new Triple(intVar,
+                NodeFactory.createLiteral("http://www.w3.org/2006/time#hasBeginning"),
+                intVarStart));
+        triples.add(new Triple(intVarStart,
+                NodeFactory.createLiteral("http://www.w3.org/2006/time#inXSDDateTimeStamp"),
+                intVarStartVar));
+        triples.add(new Triple(intVar,
+                NodeFactory.createLiteral("http://www.w3.org/2006/time#hasEnd"),
+                intVarEnd));
+        triples.add(new Triple(intVarEnd,
+                NodeFactory.createLiteral("http://www.w3.org/2006/time#inXSDDateTimeStamp"),
+                intVarEndVar));
+        return triples;
+    }
+
+    @Override
+    public Op transform(OpBGP opBGP){
+
+        Set<Triple> timeTriples = opBGP.getPattern().getList().stream()
+                .filter(t -> t.getSubject().isNodeTriple())
+                .collect(Collectors.toSet());
+
+        Set<Triple> untimeTriples = opBGP.getPattern().getList().stream()
+                .filter(t -> !t.getSubject().isNodeTriple())
+                .collect(Collectors.toSet());
+
+        if (timeTriples.size() == 0 ){
+            return opBGP;   // nothing to do in case of no time triples
+        }
+
+
+        Map<String,Set<Triple>> graphGroup = new HashMap<>();
+
+//        List<Quad> quadTriples = timeTriples.stream()
+//                .map( triple ->new Quad(triple.getObject(),triple.getSubject().getTriple()))
+//                .toList();
+
+        for (Triple t : timeTriples){
+            if (graphGroup.containsKey(t.getObject().getName())){
+                Set<Triple> oldList = graphGroup.get(t.getObject().getName());
+                oldList.add(t.getSubject().getTriple());
+                graphGroup.put(t.getObject().getName(),oldList);
+            } else {
+                Set<Triple> newList = new HashSet<>();
+                newList.add(t.getSubject().getTriple());
+                graphGroup.put(t.getObject().getName(),newList);
+            }
+        }
+
+
+//        No point in creating this list: instead create a map that maps graph name to list of triples
+
+
+        Set<Triple> stanzaTriples = timeTriples.stream()
+                .<Triple>mapMulti(
+                (triple,consumer) -> {
+                    for (Triple t : expandStanza(triple)) {
+                        consumer.accept(t);
+                    }
+                }
+                ).collect(Collectors.toSet());
+
+
+        BasicPattern newBP = new BasicPattern();
+
+        for (Triple t1 : untimeTriples) {
+            newBP.add(t1);
+        }
+        for (Triple t1 : stanzaTriples) {
+            newBP.add(t1);
+        }
+
+        Op returnOp = new OpBGP(newBP);
+
+        for ( String graph : graphGroup.keySet()) {
+            BasicPattern bp = new BasicPattern();
+
+            for (Triple t : graphGroup.get(graph)){
+                bp.add(t);
+            }
+
+            OpGraph og = new OpGraph(Var.alloc(new Node_Variable(graph)), new OpBGP(bp));
+
+            returnOp  = OpJoin.create(og,returnOp);
+        }
+
+        return returnOp;
+    }
+
+
+
+    private Expr timeIntervalBefore(Expr arg1, Expr arg2) {
+        return new E_LessThan(new ExprVar(arg1.getVarName() + "IntervalEndVar"),
+                new ExprVar(arg2.getVarName() + "IntervalStartVar"));
+    }
+
+    private Expr timeFinishes(Expr arg1, Expr arg2) {
+        Expr subE1 = new E_GreaterThan(new ExprVar(arg1.getVarName() + "IntervalStartVar"),
+                new ExprVar(arg2.getVarName() + "IntervalStartVar"));
+
+        Expr subE2 = new E_Equals(new ExprVar(arg1.getVarName() + "IntervalEndVar"),
+                new ExprVar(arg2.getVarName() + "IntervalEndVar"));
+        return new E_LogicalAnd(subE1,subE2);
+    }
+
+    private Expr timeMeets(Expr arg1, Expr arg2) {
+        return new E_Equals(new ExprVar(arg1.getVarName() + "IntervalEndVar"),
+                new ExprVar(arg2.getVarName() + "IntervalStartVar"));
+    }
+
+    private Expr timeOverlaps(Expr arg1, Expr arg2) {
+        Expr subE1 = new E_LessThan(new ExprVar(arg1.getVarName() + "IntervalStartVar"),
+                new ExprVar(arg2.getVarName() + "IntervalStartVar"));
+
+        Expr subE2 = new E_GreaterThan(new ExprVar(arg1.getVarName() + "IntervalEndVar"),
+                new ExprVar(arg2.getVarName() + "IntervalStartVar"));
+
+        Expr subE3 = new E_LessThan(new ExprVar(arg1.getVarName() + "IntervalEndVar"),
+                new ExprVar(arg2.getVarName() + "IntervalEndVar"));
+
+
+        return new E_LogicalAnd(subE1,new E_LogicalAnd(subE2,subE3));
+    }
+
+    private Expr timeStarts(Expr arg1, Expr arg2) {
+        Expr subE1 = new E_Equals(new ExprVar(arg1.getVarName() + "IntervalStartVar"),
+                new ExprVar(arg2.getVarName() + "IntervalStartVar"));
+
+        Expr subE2 = new E_LessThan(new ExprVar(arg1.getVarName() + "IntervalEndVar"),
+                new ExprVar(arg2.getVarName() + "IntervalEndVar"));
+        return new E_LogicalAnd(subE1,subE2);
+    }
+
+    private Expr timeContains(Expr arg1, Expr arg2) {
+        Expr subE1 = new E_LessThan(new ExprVar(arg1.getVarName() + "IntervalStartVar"),
+                new ExprVar(arg2.getVarName() + "IntervalStartVar"));
+
+        Expr subE2 = new E_GreaterThan(new ExprVar(arg1.getVarName() + "IntervalEndVar"),
+                new ExprVar(arg2.getVarName() + "IntervalEndVar"));
+        return new E_LogicalAnd(subE1,subE2);
+    }
+
+    private Expr timeDisjoint(Expr arg1, Expr arg2) {
+        Expr subE1 = new E_GreaterThan(new ExprVar(arg1.getVarName() + "IntervalStartVar"),
+                new ExprVar(arg2.getVarName() + "IntervalEndVar"));
+
+        Expr subE2 = new E_LessThan(new ExprVar(arg1.getVarName() + "IntervalEndVar"),
+                new ExprVar(arg2.getVarName() + "IntervalStartVar"));
+        return new E_LogicalOr(subE1,subE2);
+    }
+
+    private Expr timeEquals(Expr arg1, Expr arg2) {
+        Expr subE1 = new E_Equals(new ExprVar(arg1.getVarName() + "IntervalStartVar"),
+                new ExprVar(arg2.getVarName() + "IntervalStartVar"));
+
+        Expr subE2 = new E_Equals(new ExprVar(arg1.getVarName() + "IntervalEndVar"),
+                new ExprVar(arg2.getVarName() + "IntervalEndVar"));
+        return new E_LogicalAnd(subE1,subE2);
+    }
+
+    private Expr timeIntervalin(Expr arg1, Expr arg2) {
+        Expr subE1 = new E_GreaterThanOrEqual(new ExprVar(arg1.getVarName() + "IntervalStartVar"),
+                new ExprVar(arg2.getVarName() + "IntervalStartVar"));
+
+        Expr subE2 = new E_LessThanOrEqual(new ExprVar(arg1.getVarName() + "IntervalEndVar"),
+                new ExprVar(arg2.getVarName() + "IntervalEndVar"));
+
+        Expr subE3 = new E_LogicalNot(timeEquals(arg1,arg2));
+
+        return new E_LogicalAnd(subE1,new E_LogicalAnd(subE2,subE3));
+    }
+
+
+    @Override
+    public Op transform (OpFilter opfilt, Op supOp) {
+
+        List<Expr> expressions = opfilt.getExprs().getList();
+
+        List<Expr> newExpressions = new ArrayList<>();
+
+        for (Expr e : expressions){
+//            Class a  = e.getClass();
+//            System.out.println("Currently checking an expr of class " + a.getName());
+            if (e instanceof E_Function ec) {
+                Expr output;
+//                    System.out.println("Name of function: " + ec.getFunctionIRI());
+                switch (ec.getFunctionIRI()) {
+                    case "http://www.w3.org/2006/time#intervalBefore" ->
+                            output = timeIntervalBefore(ec.getArg(1), ec.getArg(2));
+                    case "http://www.w3.org/2006/time#intervalAfter" ->
+                            output = timeIntervalBefore(ec.getArg(2), ec.getArg(1));
+                    case "http://www.w3.org/2006/time#intervalFinishes" ->
+                            output = timeFinishes(ec.getArg(1), ec.getArg(2));
+                    case "http://www.w3.org/2006/time#intervalFinishedBy" ->
+                            output = timeFinishes(ec.getArg(2), ec.getArg(1));
+                    case "http://www.w3.org/2006/time#intervalMeets" ->
+                            output = timeMeets(ec.getArg(1), ec.getArg(2));
+                    case "http://www.w3.org/2006/time#intervalMetBy" ->
+                            output = timeMeets(ec.getArg(2), ec.getArg(1));
+                    case "http://www.w3.org/2006/time#intervalOverlappedBy" ->
+                            output = timeOverlaps(ec.getArg(2), ec.getArg(1));
+                    case "http://www.w3.org/2006/time#intervalOverlaps" ->
+                            output = timeOverlaps(ec.getArg(1), ec.getArg(2));
+                    case "http://www.w3.org/2006/time#intervalStartedBy" ->
+                            output = timeStarts(ec.getArg(2), ec.getArg(1));
+                    case "http://www.w3.org/2006/time#intervalStarts" ->
+                            output = timeStarts(ec.getArg(1), ec.getArg(2));
+                    case "http://www.w3.org/2006/time#intervalContains" ->
+                            output = timeContains(ec.getArg(1), ec.getArg(2));
+                    case "http://www.w3.org/2006/time#intervalDuring" ->
+                            output = timeContains(ec.getArg(2), ec.getArg(1));
+                    case "http://www.w3.org/2006/time#intervalIn" ->
+                            output = timeIntervalin(ec.getArg(1), ec.getArg(2));
+                    case "http://www.w3.org/2006/time#intervalEquals" ->
+                            output = timeEquals(ec.getArg(1), ec.getArg(2));
+                    case "http://www.w3.org/2006/time#intervalDisjoint" ->
+                            output = timeDisjoint(ec.getArg(1), ec.getArg(2));
+                    default -> output = e;  // unknown function, nothing to do
+                }
+                newExpressions.add(output);
+            } else {
+                newExpressions.add(e);
+            }
+        }
+
+        return OpFilter.filterBy(new ExprList(newExpressions),supOp);
+
+    }
+
+
+}

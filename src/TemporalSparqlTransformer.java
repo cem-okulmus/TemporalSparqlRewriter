@@ -1,11 +1,7 @@
 import org.apache.jena.graph.Node;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
-import org.apache.jena.sparql.algebra.Algebra;
-import org.apache.jena.sparql.algebra.Op;
-import org.apache.jena.sparql.algebra.OpVisitorBase;
-import org.apache.jena.sparql.algebra.OpWalker;
-import org.apache.jena.sparql.algebra.op.OpBGP;
+import org.apache.jena.sparql.algebra.*;
 import org.apache.jena.sparql.syntax.ElementWalker;
 
 import java.util.List;
@@ -28,8 +24,8 @@ public class TemporalSparqlTransformer {
      * @param query A Sparql-Star query that uses quoted triples to add time intervals to facts.
      * @return  True if the query fits the required structure, False otherwise.
      */
-    private static Boolean correctTemporalStarStatements(Query query) {
-        TemporalSparqlVisitor visitor = new TemporalSparqlVisitor();
+    private static boolean correctTemporalStarStatements(Query query) {
+        SparqlFormattingVisitor visitor = new SparqlFormattingVisitor();
 
         ElementWalker.walk(query.getQueryPattern(),visitor);
 
@@ -52,12 +48,12 @@ public class TemporalSparqlTransformer {
      * @param query A Sparql-Star query that uses quoted triples to add time  intervals to facts
      * @return Returns True if the query only uses single-time variable (STV) blocks, False otherwise
      */
-    private static Boolean correctSTVShape(Query query) {
-        TemporalSparqlOPVisitor visitor = new TemporalSparqlOPVisitor();
+    private static boolean correctSTVShape(Query query) {
+        STVCheckVisitor visitor = new STVCheckVisitor();
         Op op = Algebra.compile(query);
         OpWalker.walk(op,visitor);
 
-        return visitor.STVBrokenlocal;
+        return visitor.STVCondition;
     }
 
 
@@ -97,12 +93,13 @@ public class TemporalSparqlTransformer {
         // Build a new flat query that replaces any quoted triple, and replaces FILTER statements with interval comparisons
         // --------------------------------
 
-//        TODO: write the query transformer
+        TemporalRewriter tr = new TemporalRewriter();
 
+        Op newQuery  = Transformer.transform(tr,op);
 
+        Query producedQuery = OpAsQuery.asQuery(newQuery);
 
-
-        return queryString;
+        return producedQuery.toString();
     }
 
 }
