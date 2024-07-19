@@ -1,3 +1,5 @@
+package se.umu.cs.TemporalSparqlRewrite.main;
+
 import org.apache.jena.graph.Node;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
@@ -7,7 +9,7 @@ import org.apache.jena.sparql.syntax.ElementWalker;
 import java.util.List;
 
 /**
- * TemporalSparqlTransformer is meant to take a subset of Sparql-Star queries with a temporal semantics as input,
+ * main.TemporalSparqlTransformer is meant to take a subset of Sparql-Star queries with a temporal semantics as input,
  *  and transform them into a regular (non-star) Sparql query, preserving the temporal semantics.
  */
 public class TemporalSparqlTransformer {

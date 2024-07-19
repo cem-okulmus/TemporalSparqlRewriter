@@ -1,3 +1,5 @@
+package se.umu.cs.TemporalSparqlRewrite.main;
+
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.sparql.core.TriplePath;
@@ -35,6 +37,10 @@ public class SparqlFormattingVisitor extends ElementVisitorBase {
                     this.wrongStarConstruct = true;
                 }
 
+//                Ensure the objects are variables
+                if (!obj.isVariable()){
+                    this.wrongStarConstruct = true;
+                }
 
                 System.out.println("TemporalSparqlVisitor: Triple triple " + next);
 
@@ -46,17 +52,11 @@ public class SparqlFormattingVisitor extends ElementVisitorBase {
                 this.wrongStarConstruct = true; // we cannot parse such statements, hence  not allowed
             }
 
-
-
-
         }
     }
 
     @Override
     public void visit(ElementFilter el) {
-
-
-
 
        Expr e = el.getExpr();
 
@@ -68,39 +68,28 @@ public class SparqlFormattingVisitor extends ElementVisitorBase {
 
            Expr current = expressions.pop();
            switch (current){
-               case E_Exists e1 -> {
-                   ElementWalker.walk(e1.getElement(),this);
-                   break;
-               }
-               case E_NotExists e2  -> {
-                   ElementWalker.walk(e2.getElement(),this);
-                   break;
-               }
+               case E_Exists e1 -> ElementWalker.walk(e1.getElement(),this);
+               case E_NotExists e2  ->  ElementWalker.walk(e2.getElement(),this);
                case E_LogicalAnd e3 ->{
                    for (Expr andExpr : e3.getArgs()){
                        expressions.push(andExpr);
                    }
-                   break;
                }
                case E_LogicalOr e4 ->{
                    for (Expr andExpr : e4.getArgs()){
                        expressions.push(andExpr);
                    }
-                   break;
                }
                case E_LogicalNot e5 ->{
                    for (Expr andExpr : e5.getArgs()){
                        expressions.push(andExpr);
                    }
-                   break;
                }
                default -> {
                    //handle everything else
                }
            }
         }
-
-
 
     }
 

@@ -1,3 +1,5 @@
+package se.umu.cs.TemporalSparqlRewrite.main;
+
 import org.apache.jena.graph.*;
 import org.apache.jena.sparql.algebra.Op;
 import org.apache.jena.sparql.algebra.TransformCopy;
@@ -14,20 +16,39 @@ import java.util.stream.Collectors;
 
 public class TemporalRewriter extends TransformCopy {
 
-    public Op rewritenQuery = null;
-
-
-    private List<Triple> expandStanza(Triple t) {
+    private List<Triple> expandStanza(Triple t, String groupVarname, String startVarname, String endVarName) {
 
         List<Triple> triples = new ArrayList<>();
 
-        Node intVar = Var.alloc(new Node_Variable(t.getObject().getName() + "Interval"));
+        Node intName;
+        if (groupVarname.equals("")){
+            intName = Var.alloc(new Node_Variable(t.getObject().getName()));
+        } else {
+            intName = Var.alloc(new Node_Variable( groupVarname ));
+        }
+
+
+        Node intVar = Var.alloc(new Node_Variable(intName.getName() + "Interval"));
         Node intVarStart = Var.alloc(new Node_Variable(intVar.getName() + "Start"));
         Node intVarEnd = Var.alloc(new Node_Variable(intVar.getName() + "End"));
-        Node intVarStartVar = Var.alloc(new Node_Variable(intVarStart.getName() + "Var"));
-        Node intVarEndVar = Var.alloc(new Node_Variable(intVarEnd.getName() + "Var"));
+        Node intVarStartVar;
+        if (startVarname.equals("")){
+            intVarStartVar  = Var.alloc(new Node_Variable(intVarStart.getName() + "Var"));
+        } else {
+            intVarStartVar  = Var.alloc(new Node_Variable(startVarname));
+        }
 
-        triples.add(new Triple(t.getObject(),
+        Node intVarEndVar;
+        if (endVarName.equals("")) {
+            intVarEndVar = Var.alloc(new Node_Variable(intVarEnd.getName() + "Var"));
+        } else {
+            intVarEndVar  = Var.alloc(new Node_Variable(endVarName));
+        }
+
+
+
+
+        triples.add(new Triple(intName,
                 NodeFactory.createLiteral("http://www.w3.org/2006/time#hasTime"),
                 intVar));
         triples.add(new Triple(intVar,
@@ -63,33 +84,52 @@ public class TemporalRewriter extends TransformCopy {
             return opBGP;   // nothing to do in case of no time triples
         }
 
+        String graphName = "";
+        String startVarName = "";
+        String endVarName = "";
 
         Map<String,Set<Triple>> graphGroup = new HashMap<>();
 
-//        List<Quad> quadTriples = timeTriples.stream()
-//                .map( triple ->new Quad(triple.getObject(),triple.getSubject().getTriple()))
-//                .toList();
-
         for (Triple t : timeTriples){
-            if (graphGroup.containsKey(t.getObject().getName())){
-                Set<Triple> oldList = graphGroup.get(t.getObject().getName());
-                oldList.add(t.getSubject().getTriple());
-                graphGroup.put(t.getObject().getName(),oldList);
-            } else {
-                Set<Triple> newList = new HashSet<>();
-                newList.add(t.getSubject().getTriple());
-                graphGroup.put(t.getObject().getName(),newList);
+
+            switch (t.getPredicate().toString()) {
+                case "http://www.w3.org/2006/time#hasBeginning" -> startVarName = t.getObject().getName();
+                case "http://www.w3.org/2006/time#hasEnd" -> endVarName = t.getObject().getName();
+                case "http://www.w3.org/2006/time#hasTime" -> {
+                    graphName = t.getObject().getName();
+                    if (graphGroup.containsKey(t.getObject().getName())){
+                        Set<Triple> oldList = graphGroup.get(t.getObject().getName());
+                        oldList.add(t.getSubject().getTriple());
+                        graphGroup.put(t.getObject().getName(),oldList);
+                    } else {
+                        Set<Triple> newList = new HashSet<>();
+                        newList.add(t.getSubject().getTriple());
+                        graphGroup.put(t.getObject().getName(),newList);
+                    }
+                }
             }
         }
 
+//        //        provide an ad-hoc graph name if none present in the timeTriples
+//        if (graphName.equals("")){
+//            if (startVarName.equals("")){
+////                use  endvarname
+//                graphName  = endVarName + "GraphName";
+//            } else {
+////                use starvarName
+//                graphName  = startVarName + "GraphName";
+//            }
+//        }
 
-//        No point in creating this list: instead create a map that maps graph name to list of triples
 
 
+        String finalGraphName = graphName;
+        String finalStartVarName = startVarName;
+        String finalEndVarName = endVarName;
         Set<Triple> stanzaTriples = timeTriples.stream()
                 .<Triple>mapMulti(
                 (triple,consumer) -> {
-                    for (Triple t : expandStanza(triple)) {
+                    for (Triple t : expandStanza(triple, finalGraphName, finalStartVarName, finalEndVarName)) {
                         consumer.accept(t);
                     }
                 }
