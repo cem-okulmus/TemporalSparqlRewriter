@@ -92,7 +92,7 @@ public class TemporalSparqlTransformer {
         }
 
         // --------------------------------
-        // Build a new flat query that replaces any quoted triple, and replaces FILTER statements with interval comparisons
+        // Build a new query that replaces any quoted triple, and replaces FILTER statements with interval comparisons
         // --------------------------------
 
         TemporalRewriter tr = new TemporalRewriter();

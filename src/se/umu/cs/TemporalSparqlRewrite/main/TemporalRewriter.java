@@ -109,16 +109,16 @@ public class TemporalRewriter extends TransformCopy {
             }
         }
 
-//        //        provide an ad-hoc graph name if none present in the timeTriples
-//        if (graphName.equals("")){
-//            if (startVarName.equals("")){
-////                use  endvarname
-//                graphName  = endVarName + "GraphName";
-//            } else {
-////                use starvarName
-//                graphName  = startVarName + "GraphName";
-//            }
-//        }
+        //        provide an ad-hoc graph name if none present in the timeTriples
+        if (graphName.equals("")){
+            if (startVarName.equals("")){
+//                use  endvarname
+                graphName  = endVarName + "GraphName";
+            } else {
+//                use starvarName
+                graphName  = startVarName + "GraphName";
+            }
+        }
 
 
 
