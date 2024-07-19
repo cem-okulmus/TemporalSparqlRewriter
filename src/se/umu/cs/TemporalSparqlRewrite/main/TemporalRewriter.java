@@ -47,24 +47,23 @@ public class TemporalRewriter extends TransformCopy {
 
 
 
-
-        triples.add(new Triple(intName,
-                NodeFactory.createLiteral("http://www.w3.org/2006/time#hasTime"),
+        triples.add(Triple.create(intName,
+                NodeFactory.createLiteralString("http://www.w3.org/2006/time#hasTime"),
                 intVar));
-        triples.add(new Triple(intVar,
-                NodeFactory.createLiteral("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-                NodeFactory.createLiteral("http://www.w3.org/2006/time#Interval")));
-        triples.add(new Triple(intVar,
-                NodeFactory.createLiteral("http://www.w3.org/2006/time#hasBeginning"),
+        triples.add(Triple.create(intVar,
+                NodeFactory.createLiteralString("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+                NodeFactory.createLiteralString("http://www.w3.org/2006/time#Interval")));
+        triples.add(Triple.create(intVar,
+                NodeFactory.createLiteralString("http://www.w3.org/2006/time#hasBeginning"),
                 intVarStart));
-        triples.add(new Triple(intVarStart,
-                NodeFactory.createLiteral("http://www.w3.org/2006/time#inXSDDateTimeStamp"),
+        triples.add(Triple.create(intVarStart,
+                NodeFactory.createLiteralString("http://www.w3.org/2006/time#inXSDDateTimeStamp"),
                 intVarStartVar));
-        triples.add(new Triple(intVar,
-                NodeFactory.createLiteral("http://www.w3.org/2006/time#hasEnd"),
+        triples.add(Triple.create(intVar,
+                NodeFactory.createLiteralString("http://www.w3.org/2006/time#hasEnd"),
                 intVarEnd));
-        triples.add(new Triple(intVarEnd,
-                NodeFactory.createLiteral("http://www.w3.org/2006/time#inXSDDateTimeStamp"),
+        triples.add(Triple.create(intVarEnd,
+                NodeFactory.createLiteralString("http://www.w3.org/2006/time#inXSDDateTimeStamp"),
                 intVarEndVar));
         return triples;
     }

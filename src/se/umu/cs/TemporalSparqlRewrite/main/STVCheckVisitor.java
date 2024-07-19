@@ -1,10 +1,14 @@
 package se.umu.cs.TemporalSparqlRewrite.main;
 
 import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.algebra.Op;
 import org.apache.jena.sparql.algebra.OpVisitorBase;
 import org.apache.jena.sparql.algebra.OpWalker;
 import org.apache.jena.sparql.algebra.op.OpBGP;
 import org.apache.jena.sparql.algebra.op.OpFilter;
+import org.apache.jena.sparql.algebra.op.OpJoin;
+import org.apache.jena.sparql.algebra.op.OpLeftJoin;
+import org.apache.jena.sparql.algebra.op.OpLateral;
 import org.apache.jena.sparql.core.BasicPattern;
 import org.apache.jena.sparql.expr.*;
 
@@ -14,9 +18,9 @@ public class STVCheckVisitor extends OpVisitorBase {
 
     public boolean STVCondition = true;
 
-    @Override
-    public void visit(OpBGP opBGP) {
 
+
+    private Map<String,Set<String>> visitInternal(OpBGP opBGP) {
 
         Map<String,Set<String>> timeVarMap = new HashMap<>();
 
@@ -42,6 +46,14 @@ public class STVCheckVisitor extends OpVisitorBase {
 
             }
         }
+        return timeVarMap;
+    }
+
+
+
+    @Override
+    public void visit(OpBGP opBGP) {
+        Map<String,Set<String>> timeVarMap = visitInternal(opBGP);
 
 
         for (String predicate : timeVarMap.keySet()) {
@@ -55,8 +67,86 @@ public class STVCheckVisitor extends OpVisitorBase {
             }
         }
 
-
         //TODO: add support for multiple time variables, if they are set to equal in a FILTER
+    }
+
+
+    @Override
+    public void  visit(OpLeftJoin opJoin){
+//     if we left join two BGPs, then they agree on all the variables
+
+        Op op1 = opJoin.getLeft();
+        Op op2 = opJoin.getRight();
+
+        if ((op1 instanceof OpBGP)  && (op2 instanceof  OpBGP) ){
+            Map<String,Set<String>> timeVars1 =  this.visitInternal((OpBGP) op1);
+            Map<String,Set<String>> timeVars2 =  this.visitInternal((OpBGP) op2);
+
+            for (String pred : timeVars1.keySet()) {
+                if (!( timeVars1.get(pred).equals(timeVars2.get(pred)))){
+                    this.STVCondition = false;
+                }
+            }
+            for (String pred : timeVars2.keySet()) {
+                if (!( timeVars2.get(pred).equals(timeVars1.get(pred)))){
+                    this.STVCondition = false;
+                }
+            }
+        }
+
+
+    }
+
+    @Override
+    public void  visit(OpJoin opJoin){
+//     if we join two BGPs, then they agree on all the variables
+
+        Op op1 = opJoin.getLeft();
+        Op op2 = opJoin.getRight();
+
+        if ((op1 instanceof OpBGP)  && (op2 instanceof  OpBGP) ){
+            Map<String,Set<String>> timeVars1 =  this.visitInternal((OpBGP) op1);
+            Map<String,Set<String>> timeVars2 =  this.visitInternal((OpBGP) op2);
+
+            for (String pred : timeVars1.keySet()) {
+                if (!( timeVars1.get(pred).equals(timeVars2.get(pred)))){
+                    this.STVCondition = false;
+                }
+            }
+            for (String pred : timeVars2.keySet()) {
+                if (!( timeVars2.get(pred).equals(timeVars1.get(pred)))){
+                    this.STVCondition = false;
+                }
+            }
+        }
+
+
+    }
+
+    @Override
+    public void  visit(OpLateral opJoin){
+//     if we lateral join two BGPs, then they agree on all the variables
+
+        Op op1 = opJoin.getLeft();
+        Op op2 = opJoin.getRight();
+
+        if ((op1 instanceof OpBGP)  && (op2 instanceof  OpBGP) ){
+            Map<String,Set<String>> timeVars1 =  this.visitInternal((OpBGP) op1);
+            Map<String,Set<String>> timeVars2 =  this.visitInternal((OpBGP) op2);
+
+            for (String pred : timeVars1.keySet()) {
+                if (!( timeVars1.get(pred).equals(timeVars2.get(pred)))){
+                    this.STVCondition = false;
+                }
+            }
+            for (String pred : timeVars2.keySet()) {
+                if (!( timeVars2.get(pred).equals(timeVars1.get(pred)))){
+                    this.STVCondition = false;
+                }
+            }
+        }
+
+
     }
 
 
