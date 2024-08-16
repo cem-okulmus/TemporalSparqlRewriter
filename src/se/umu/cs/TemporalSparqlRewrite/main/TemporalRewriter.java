@@ -31,21 +31,8 @@ public class TemporalRewriter extends TransformCopy {
         Node intVar = Var.alloc(new Node_Variable(intName.getName() + "Interval"));
         Node intVarStart = Var.alloc(new Node_Variable(intVar.getName() + "Start"));
         Node intVarEnd = Var.alloc(new Node_Variable(intVar.getName() + "End"));
-        Node intVarStartVar;
-        if (startVarname.equals("")){
-            intVarStartVar  = Var.alloc(new Node_Variable(intVarStart.getName() + "Var"));
-        } else {
-            intVarStartVar  = Var.alloc(new Node_Variable(startVarname));
-        }
-
-        Node intVarEndVar;
-        if (endVarName.equals("")) {
-            intVarEndVar = Var.alloc(new Node_Variable(intVarEnd.getName() + "Var"));
-        } else {
-            intVarEndVar  = Var.alloc(new Node_Variable(endVarName));
-        }
-
-
+        Node intVarStartVar = Var.alloc(new Node_Variable(startVarname));
+        Node intVarEndVar = Var.alloc(new Node_Variable(endVarName));
 
         triples.add(Triple.create(intName,
                 NodeFactory.createLiteralString("http://www.w3.org/2006/time#hasTime"),
@@ -67,6 +54,7 @@ public class TemporalRewriter extends TransformCopy {
                 intVarEndVar));
         return triples;
     }
+
 
     @Override
     public Op transform(OpBGP opBGP){
@@ -94,18 +82,17 @@ public class TemporalRewriter extends TransformCopy {
             switch (t.getPredicate().toString()) {
                 case "http://www.w3.org/2006/time#hasBeginning" -> startVarName = t.getObject().getName();
                 case "http://www.w3.org/2006/time#hasEnd" -> endVarName = t.getObject().getName();
-                case "http://www.w3.org/2006/time#hasTime" -> {
-                    graphName = t.getObject().getName();
-                    if (graphGroup.containsKey(t.getObject().getName())){
-                        Set<Triple> oldList = graphGroup.get(t.getObject().getName());
-                        oldList.add(t.getSubject().getTriple());
-                        graphGroup.put(t.getObject().getName(),oldList);
-                    } else {
-                        Set<Triple> newList = new HashSet<>();
-                        newList.add(t.getSubject().getTriple());
-                        graphGroup.put(t.getObject().getName(),newList);
-                    }
-                }
+                case "http://www.w3.org/2006/time#hasTime" -> graphName = t.getObject().getName();
+            }
+
+            if (graphGroup.containsKey(t.getObject().getName())){
+                Set<Triple> oldList = graphGroup.get(t.getObject().getName());
+                oldList.add(t.getSubject().getTriple());
+                graphGroup.put(t.getObject().getName(),oldList);
+            } else {
+                Set<Triple> newList = new HashSet<>();
+                newList.add(t.getSubject().getTriple());
+                graphGroup.put(t.getObject().getName(),newList);
             }
         }
 
@@ -118,6 +105,13 @@ public class TemporalRewriter extends TransformCopy {
 //                use starvarName
                 graphName  = startVarName + "GraphName";
             }
+        }
+
+        if (startVarName.equals("")){
+            startVarName = graphName +"IntervalStartVar";
+        }
+        if (endVarName.equals("")){
+            endVarName = graphName +"IntervalEndVar";
         }
 
 
@@ -248,6 +242,8 @@ public class TemporalRewriter extends TransformCopy {
     @Override
     public Op transform (OpFilter opfilt, Op supOp) {
 
+        System.out.println("Currently at Filter: " + opfilt +" with subOP" + opfilt.getSubOp());
+
         List<Expr> expressions = opfilt.getExprs().getList();
 
         List<Expr> newExpressions = new ArrayList<>();
@@ -255,6 +251,13 @@ public class TemporalRewriter extends TransformCopy {
         for (Expr e : expressions){
 //            Class a  = e.getClass();
 //            System.out.println("Currently checking an expr of class " + a.getName());
+
+//            if (e instanceof E_Exists ex) {
+//                System.out.println("Currently checking exists: " + ex.toString());
+//
+//                System.out.println("\n\n with SubOP \n " + supOp.toString());
+//            }
+
             if (e instanceof E_Function ec) {
                 Expr output;
 //                    System.out.println("Name of function: " + ec.getFunctionIRI());
@@ -292,7 +295,31 @@ public class TemporalRewriter extends TransformCopy {
                     default -> output = e;  // unknown function, nothing to do
                 }
                 newExpressions.add(output);
-            } else {
+            }
+            else if (e instanceof E_Exists ex) {
+
+                System.out.println("----------   CALLING EXISTS TRANSFORME -----------");
+
+                   Op opInsideExists =  ex.getGraphPattern();
+
+                   Op innerOp = null;
+
+                   if (opInsideExists instanceof OpFilter opF) {
+
+                       newExpressions.addAll(opF.getExprs().getList());
+
+                       innerOp = opF.getSubOp();
+                   } else if (opInsideExists instanceof OpBGP inneropB) {
+                      innerOp = inneropB;
+                   }
+
+                   if ( innerOp != null ){
+                       supOp = OpJoin.create(supOp,innerOp);
+                   }
+
+
+            }
+            else {
                 newExpressions.add(e);
             }
         }

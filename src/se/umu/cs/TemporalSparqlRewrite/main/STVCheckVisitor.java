@@ -9,7 +9,6 @@ import org.apache.jena.sparql.algebra.op.OpFilter;
 import org.apache.jena.sparql.algebra.op.OpJoin;
 import org.apache.jena.sparql.algebra.op.OpLeftJoin;
 import org.apache.jena.sparql.algebra.op.OpLateral;
-import org.apache.jena.sparql.core.BasicPattern;
 import org.apache.jena.sparql.expr.*;
 
 import java.util.*;
@@ -24,8 +23,8 @@ public class STVCheckVisitor extends OpVisitorBase {
 
         Map<String,Set<String>> timeVarMap = new HashMap<>();
 
-        BasicPattern bp = opBGP.getPattern();
-        System.out.println("Look at this pattern: " + bp.getList());
+//        BasicPattern bp = opBGP.getPattern();
+//        System.out.println("Look at this pattern: " + bp.getList());
 
 
         List<Triple> triples = opBGP.getPattern().getList();
@@ -77,6 +76,7 @@ public class STVCheckVisitor extends OpVisitorBase {
 
         Op op1 = opJoin.getLeft();
         Op op2 = opJoin.getRight();
+
 
         if ((op1 instanceof OpBGP)  && (op2 instanceof  OpBGP) ){
             Map<String,Set<String>> timeVars1 =  this.visitInternal((OpBGP) op1);

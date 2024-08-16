@@ -20,14 +20,14 @@ public class TemporalSparqlTransformerTest {
                     << ?x :dept ?z  >>              time:hasTime  ?y; time:hasEnd ?endVar .
                     << ?z :location 'barcelona' >>  time:hasTime  ?y; time:hasTime ?y .
                     ?r :location 'barcelona' .
-                    FILTER (EXISTS {
-                         << ?x :dept ?z >> time:hasTime ?y2 .
+                    FILTER EXISTS {
+                         << ?x :dept ?z2 >> time:hasTime ?y2 .
                          FILTER(time:intervalBefore(?y2,?y)).
                          FILTER EXISTS {
                              << ?x :dept ?z >> time:hasTime ?y2 .
                              FILTER(time:intervalIn(?y2,?y)).
                         }
-                    } && ?x > 2)
+                    }
                 }""";
         String outQuery = "";
         try{
