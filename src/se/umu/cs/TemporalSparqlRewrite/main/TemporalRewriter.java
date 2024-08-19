@@ -75,7 +75,7 @@ public class TemporalRewriter extends TransformCopy {
         String startVarName = "";
         String endVarName = "";
 
-        Map<String,Set<Triple>> graphGroup = new HashMap<>();
+        Set<Triple> graphGroup = new HashSet<>();
 
         for (Triple t : timeTriples){
 
@@ -85,27 +85,9 @@ public class TemporalRewriter extends TransformCopy {
                 case "http://www.w3.org/2006/time#hasTime" -> graphName = t.getObject().getName();
             }
 
-            if (graphGroup.containsKey(t.getObject().getName())){
-                Set<Triple> oldList = graphGroup.get(t.getObject().getName());
-                oldList.add(t.getSubject().getTriple());
-                graphGroup.put(t.getObject().getName(),oldList);
-            } else {
-                Set<Triple> newList = new HashSet<>();
-                newList.add(t.getSubject().getTriple());
-                graphGroup.put(t.getObject().getName(),newList);
-            }
+            graphGroup.add(t.getSubject().getTriple()); // can be done safely due to filter above
         }
 
-        //        provide an ad-hoc graph name if none present in the timeTriples
-        if (graphName.equals("")){
-            if (startVarName.equals("")){
-//                use  endvarname
-                graphName  = endVarName + "GraphName";
-            } else {
-//                use starvarName
-                graphName  = startVarName + "GraphName";
-            }
-        }
 
         if (startVarName.equals("")){
             startVarName = graphName +"IntervalStartVar";
@@ -140,17 +122,17 @@ public class TemporalRewriter extends TransformCopy {
 
         Op returnOp = new OpBGP(newBP);
 
-        for ( String graph : graphGroup.keySet()) {
+//        for ( String graph : graphGroup.keySet()) {
             BasicPattern bp = new BasicPattern();
 
-            for (Triple t : graphGroup.get(graph)){
+            for (Triple t : graphGroup){
                 bp.add(t);
             }
 
-            OpGraph og = new OpGraph(Var.alloc(new Node_Variable(graph)), new OpBGP(bp));
+            OpGraph og = new OpGraph(Var.alloc(new Node_Variable(finalGraphName)), new OpBGP(bp));
 
             returnOp  = OpJoin.create(og,returnOp);
-        }
+//        }
 
         return returnOp;
     }
@@ -298,25 +280,30 @@ public class TemporalRewriter extends TransformCopy {
             }
             else if (e instanceof E_Exists ex) {
 
-                System.out.println("----------   CALLING EXISTS TRANSFORME -----------");
+                System.out.println("----------   CALLING EXISTS TRANSFORMER -----------");
+
+                  Expr exprs =   ex.getExpr();
+
+                System.out.println("Exprs in the exist "  + exprs);
 
                    Op opInsideExists =  ex.getGraphPattern();
 
-                   Op innerOp = null;
+//                   Op innerOp = null;
+//
+//                   if (opInsideExists instanceof OpFilter opF) {
+//
+//                       newExpressions.addAll(opF.getExprs().getList());
+//
+//                       innerOp = opF.getSubOp();
+//                   } else if (opInsideExists instanceof OpBGP inneropB) {
+//                      innerOp = inneropB;
+//                   }
 
-                   if (opInsideExists instanceof OpFilter opF) {
+//                   if ( innerOp != null ){
+//                       supOp = OpJoin.create(supOp,innerOp);
+//                   }
 
-                       newExpressions.addAll(opF.getExprs().getList());
-
-                       innerOp = opF.getSubOp();
-                   } else if (opInsideExists instanceof OpBGP inneropB) {
-                      innerOp = inneropB;
-                   }
-
-                   if ( innerOp != null ){
-                       supOp = OpJoin.create(supOp,innerOp);
-                   }
-
+                supOp = OpJoin.create(opInsideExists,supOp);
 
             }
             else {

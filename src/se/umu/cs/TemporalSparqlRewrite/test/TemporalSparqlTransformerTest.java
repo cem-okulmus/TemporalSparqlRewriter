@@ -24,8 +24,8 @@ public class TemporalSparqlTransformerTest {
                          << ?x :dept ?z2 >> time:hasTime ?y2 .
                          FILTER(time:intervalBefore(?y2,?y)).
                          FILTER EXISTS {
-                             << ?x :dept ?z >> time:hasTime ?y2 .
-                             FILTER(time:intervalIn(?y2,?y)).
+                             << ?x :dept ?z >> time:hasTime ?y3 .
+                             FILTER(time:intervalIn(?y3,?y)).
                         }
                     }
                 }""";

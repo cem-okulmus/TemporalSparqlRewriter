@@ -54,9 +54,23 @@ public class STVCheckVisitor extends OpVisitorBase {
     public void visit(OpBGP opBGP) {
         Map<String,Set<String>> timeVarMap = visitInternal(opBGP);
 
+        boolean intervalDefined = false;
+
+        boolean endPointDefined = false;
+
+
 
         for (String predicate : timeVarMap.keySet()) {
             Set<String> timeVars = timeVarMap.get(predicate);
+
+            if ( predicate.equals("http://www.w3.org/2006/time#hasTime") ){
+                intervalDefined = true;
+            }
+
+            if ( predicate.equals("http://www.w3.org/2006/time#hasEnd")
+                    || predicate.equals("http://www.w3.org/2006/time#hasBeginning")  ){
+                endPointDefined = true;
+            }
 
             if (timeVars.size() > 1) {   // right now: force all interval variables in a BGP to be the same
                 System.out.println("Variables in block " + timeVars);
@@ -66,7 +80,10 @@ public class STVCheckVisitor extends OpVisitorBase {
             }
         }
 
-        //TODO: add support for multiple time variables, if they are set to equal in a FILTER
+        if (!intervalDefined && endPointDefined) {
+            this.STVCondition = false ;
+        }
+
     }
 
 
@@ -158,11 +175,13 @@ public class STVCheckVisitor extends OpVisitorBase {
 //        System.out.println("Look at this subOP: " + subOp + " with Class "  + a.getName() +"\n" );
 //        System.out.println("Look at this exprList: " + exprList);
 
+
         Deque<Expr> expressions = new ArrayDeque<>();
 
         for (Expr e : exprList) {
             expressions.push(e);
         }
+
 
         while (expressions.size() > 0){
             Expr current = expressions.pop();
