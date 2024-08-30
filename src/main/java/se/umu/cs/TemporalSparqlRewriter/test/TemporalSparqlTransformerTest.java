@@ -1,8 +1,8 @@
-package se.umu.cs.TemporalSparqlRewrite.test;
+package se.umu.cs.TemporalSparqlRewriter.test;
 
 
 import org.junit.jupiter.api.Test;
-import se.umu.cs.TemporalSparqlRewrite.main.TemporalSparqlTransformer;
+import se.umu.cs.TemporalSparqlRewriter.main.TemporalSparqlTransformer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
