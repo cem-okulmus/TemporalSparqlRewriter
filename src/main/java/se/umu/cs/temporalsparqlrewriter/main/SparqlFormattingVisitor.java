@@ -1,4 +1,4 @@
-package se.umu.cs.TemporalSparqlRewriter.main;
+package se.umu.cs.temporalsparqlrewriter.main;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.Triple;
