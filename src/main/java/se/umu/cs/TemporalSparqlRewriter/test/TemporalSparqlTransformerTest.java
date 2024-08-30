@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class TemporalSparqlTransformerTest {
 
-
+// comment
 
     @Test
     public void SparqlBasicTest() {
