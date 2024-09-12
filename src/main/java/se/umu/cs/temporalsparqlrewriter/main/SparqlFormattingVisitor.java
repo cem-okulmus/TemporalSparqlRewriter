@@ -67,28 +67,61 @@ public class SparqlFormattingVisitor extends ElementVisitorBase {
        while (expressions.size() > 0){
 
            Expr current = expressions.pop();
-           switch (current){
-               case E_Exists e1 -> ElementWalker.walk(e1.getElement(),this);
-               case E_NotExists e2  ->  ElementWalker.walk(e2.getElement(),this);
-               case E_LogicalAnd e3 ->{
-                   for (Expr andExpr : e3.getArgs()){
-                       expressions.push(andExpr);
-                   }
+
+           if (current instanceof E_Exists) {
+               E_Exists e1 = (E_Exists) current;
+               ElementWalker.walk(e1.getElement(),this);
+
+           } else
+           if (current instanceof E_NotExists) {
+               E_NotExists e2 = (E_NotExists) current;
+               ElementWalker.walk(e2.getElement(),this);
+           } else
+           if (current instanceof E_LogicalAnd) {
+               E_LogicalAnd e3 = (E_LogicalAnd) current;
+               for (Expr andExpr : e3.getArgs()){
+                   expressions.push(andExpr);
                }
-               case E_LogicalOr e4 ->{
-                   for (Expr andExpr : e4.getArgs()){
-                       expressions.push(andExpr);
-                   }
+
+           } else
+           if (current instanceof E_LogicalOr) {
+               E_LogicalOr e4 = (E_LogicalOr) current;
+
+               for (Expr andExpr : e4.getArgs()){
+                   expressions.push(andExpr);
                }
-               case E_LogicalNot e5 ->{
-                   for (Expr andExpr : e5.getArgs()){
-                       expressions.push(andExpr);
-                   }
+
+           } else
+           if (current instanceof E_LogicalNot) {
+               E_LogicalNot e5 = (E_LogicalNot) current;
+               for (Expr andExpr : e5.getArgs()){
+                   expressions.push(andExpr);
                }
-               default -> {
-                   //handle everything else
-               }
+
            }
+
+//           switch (current){
+//               case E_Exists e1 -> ElementWalker.walk(e1.getElement(),this);
+//               case E_NotExists e2  ->  ElementWalker.walk(e2.getElement(),this);
+//               case E_LogicalAnd e3 ->{
+//                   for (Expr andExpr : e3.getArgs()){
+//                       expressions.push(andExpr);
+//                   }
+//               }
+//               case E_LogicalOr e4 ->{
+//                   for (Expr andExpr : e4.getArgs()){
+//                       expressions.push(andExpr);
+//                   }
+//               }
+//               case E_LogicalNot e5 ->{
+//                   for (Expr andExpr : e5.getArgs()){
+//                       expressions.push(andExpr);
+//                   }
+//               }
+//               default -> {
+//                   //handle everything else
+//               }
+//           }
         }
 
     }

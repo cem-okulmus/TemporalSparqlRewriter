@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_19_PREVIEW">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_11">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/out/production" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="apache.jena.arq" level="project" />
     <orderEntry type="module-library">
       <library name="JUnit4">
         <CLASSES>
@@ -39,6 +39,7 @@
       </library>
     </orderEntry>
     <orderEntry type="library" exported="" name="slf4j.nop" level="project" />
+    <orderEntry type="library" exported="" name="apache.jena.arq" level="project" />
     <orderEntry type="library" name="Maven: org.apache.jena:jena-arq:5.1.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.jena:jena-core:5.1.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.jena:jena-base:5.1.0" level="project" />
@@ -64,11 +65,11 @@
     <orderEntry type="library" name="Maven: org.junit.platform:junit-platform-suite-api:1.10.3" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Maven: org.junit.platform:junit-platform-suite-commons:1.10.3" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Maven: org.junit.platform:junit-platform-launcher:1.10.3" level="project" />
-    <orderEntry type="library" name="Maven: org.slf4j:slf4j-nop:2.0.0" level="project" />
-    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:2.0.0" level="project" />
-    <orderEntry type="library" name="Maven: org.junit.jupiter:junit-jupiter-api:5.11.0" level="project" />
-    <orderEntry type="library" name="Maven: org.opentest4j:opentest4j:1.3.0" level="project" />
-    <orderEntry type="library" name="Maven: org.junit.platform:junit-platform-commons:1.11.0" level="project" />
+    <orderEntry type="library" name="Maven: org.slf4j:slf4j-nop:1.7.36" level="project" />
+    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.36" level="project" />
+    <orderEntry type="library" name="Maven: org.junit.jupiter:junit-jupiter-api:5.8.2" level="project" />
+    <orderEntry type="library" name="Maven: org.opentest4j:opentest4j:1.2.0" level="project" />
+    <orderEntry type="library" name="Maven: org.junit.platform:junit-platform-commons:1.8.2" level="project" />
     <orderEntry type="library" name="Maven: org.apiguardian:apiguardian-api:1.1.2" level="project" />
   </component>
 </module>

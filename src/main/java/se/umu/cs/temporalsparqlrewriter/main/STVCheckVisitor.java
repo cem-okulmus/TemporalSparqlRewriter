@@ -185,28 +185,70 @@ public class STVCheckVisitor extends OpVisitorBase {
 
         while (expressions.size() > 0){
             Expr current = expressions.pop();
-            switch (current){
-                case E_Exists e1     -> OpWalker.walk(e1.getGraphPattern(),this);
-                case E_NotExists e2  -> OpWalker.walk(e2.getGraphPattern(),this);
-                case E_LogicalAnd e3 -> {
-                    for (Expr andExpr : e3.getArgs()){
-                        expressions.push(andExpr);
-                    }
+
+
+            if (current instanceof  E_Exists) {
+                E_Exists e1 = (E_Exists) current;
+                OpWalker.walk(e1.getGraphPattern(),this);
+
+            } else
+            if (current instanceof  E_NotExists) {
+                E_NotExists e2 = (E_NotExists) current;
+                OpWalker.walk(e2.getGraphPattern(),this);
+
+            } else
+            if (current instanceof  E_LogicalAnd) {
+                E_LogicalAnd e3 = (E_LogicalAnd) current;
+
+                for (Expr andExpr : e3.getArgs()){
+                    expressions.push(andExpr);
                 }
-                case E_LogicalOr e4 -> {
-                    for (Expr andExpr : e4.getArgs()){
-                        expressions.push(andExpr);
-                    }
+
+            } else
+            if (current instanceof  E_LogicalOr) {
+                E_LogicalOr e4 = (E_LogicalOr) current;
+
+                for (Expr andExpr : e4.getArgs()){
+                    expressions.push(andExpr);
                 }
-                case E_LogicalNot e5 -> {
-                    for (Expr andExpr : e5.getArgs()){
-                        expressions.push(andExpr);
-                    }
+
+            } else
+            if (current instanceof  E_LogicalNot) {
+                E_LogicalNot e5 = (E_LogicalNot) current;
+
+                for (Expr andExpr : e5.getArgs()){
+                    expressions.push(andExpr);
                 }
-                default -> {
-                    //handle everything else
-                }
+
             }
+
+
+//            switch (current.getClass()){
+//                case E_Exists : {
+//
+//                    OpWalker.walk(e1.getGraphPattern(),this);
+//                    break;
+//                }
+//                case E_NotExists e2  -> OpWalker.walk(e2.getGraphPattern(),this);
+//                case E_LogicalAnd e3 -> {
+//                    for (Expr andExpr : e3.getArgs()){
+//                        expressions.push(andExpr);
+//                    }
+//                }
+//                case E_LogicalOr e4 -> {
+//                    for (Expr andExpr : e4.getArgs()){
+//                        expressions.push(andExpr);
+//                    }
+//                }
+//                case E_LogicalNot e5 -> {
+//                    for (Expr andExpr : e5.getArgs()){
+//                        expressions.push(andExpr);
+//                    }
+//                }
+//                default -> {
+//                    //handle everything else
+//                }
+//            }
         }
     }
 //    TODO: Add suitable overrides for UNION, OPTIONAL, MINUS, and anything else that can realistically contain a BGP
