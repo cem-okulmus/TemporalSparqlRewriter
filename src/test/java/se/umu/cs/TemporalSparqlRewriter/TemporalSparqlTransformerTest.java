@@ -1,10 +1,8 @@
-package se.umu.cs.temporalsparqlrewriter.test;
+package se.umu.cs.TemporalSparqlRewriter;
 
-
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import se.umu.cs.temporalsparqlrewriter.main.TemporalSparqlTransformer;
 
-import static org.junit.jupiter.api.Assertions.*;
 
 public class TemporalSparqlTransformerTest {
 
@@ -38,7 +36,7 @@ public class TemporalSparqlTransformerTest {
         }
 
 
-        assertNotEquals("", outQuery);
+        Assertions.assertNotEquals("", outQuery);
     }
 
     @Test
@@ -74,7 +72,7 @@ public class TemporalSparqlTransformerTest {
         }
 
 
-        assertEquals("", outQuery);
+        Assertions.assertEquals("", outQuery);
     }
 
 
@@ -112,7 +110,7 @@ public class TemporalSparqlTransformerTest {
         }
 
 
-        assertEquals("", outQuery);
+        Assertions.assertEquals("", outQuery);
     }
 
 
